@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charites Threads | Join the Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let db, auth;
+        let userId;
+
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        async function initializeAppWithAuth() {
+            try {
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                userId = auth.currentUser.uid;
+                
+                // We still want to track visits, so we'll call this function.
+                incrementVisitCount();
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+                const errorMessage = document.getElementById('error-message');
+                if (errorMessage) errorMessage.textContent = "Failed to authenticate. Please try again.";
+            }
+        }
+        
+        initializeAppWithAuth();
+
+        const waitlistForm = document.getElementById('waitlistForm');
+        const submissionMessage = document.getElementById('submissionMessage');
+        const submitButton = waitlistForm.querySelector('button[type="submit"]');
+        const errorMessage = document.getElementById('error-message');
+
+        waitlistForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!db) {
+                if (errorMessage) errorMessage.textContent = "Database not ready. Please wait a moment and try again.";
+                return;
+            }
+
+            const formData = {
+                brandName: document.getElementById('brandName').value,
+                ownerName: document.getElementById('ownerName').value,
+                email: document.getElementById('email').value,
+                contactNumber: document.getElementById('contactNumber').value,
+                instagramHandle: document.getElementById('instagramHandle').value,
+                timestamp: new Date()
+            };
+
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/waitlist_signups`;
+                await addDoc(collection(db, collectionPath), formData);
+                
+                waitlistForm.reset();
+                submitButton.style.display = 'none';
+                submissionMessage.style.display = 'block';
+                if (errorMessage) errorMessage.textContent = '';
+
+            } catch (error) {
+                console.error("Error adding document:", error);
+                if (errorMessage) errorMessage.textContent = `Submission failed: ${error.message}`;
+            }
+        });
+
+        async function incrementVisitCount() {
+            if (!db) return;
+            const analyticsDocPath = `artifacts/${appId}/public/data/site_analytics/visitor_count`;
+            const analyticsDocRef = doc(db, analyticsDocPath);
+
+            try {
+                const docSnap = await getDoc(analyticsDocRef);
+                if (docSnap.exists()) {
+                    await updateDoc(analyticsDocRef, { count: increment(1) });
+                } else {
+                    await setDoc(analyticsDocRef, { count: 1 });
+                }
+            } catch (error) {
+                console.error("Failed to increment visit count:", error);
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #3D405B;
+        }
+        .btn-primary {
+            background-color: #E07A5F;
+            color: #F8F7F4;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #c96c52;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <header class="text-center my-12 md:my-16">
+            <h1 class="text-4xl md:text-5xl font-black text-[#3D405B] tracking-tighter">Charites Threads</h1>
+            <p class="text-lg md:text-xl font-semibold text-[#81B29A] mt-2">The Home of SA Streetwear</p>
+        </header>
+
+        <main>
+            <section class="text-center mb-16 md:mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Empower Your Brand, Grow Your Business.</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto mb-8 text-lg">Tired of high fees and manual orders? Charites Threads is the curated marketplace for South African streetwear brands. Join our waitlist to get exclusive early access.</p>
+                <div class="inline-block px-6 py-2 bg-[#81B29A] text-white font-bold rounded-full text-sm">
+                    Keep 88% of your sales with no monthly fees.
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center mb-16 md:mb-20">
+                <div class="p-6 bg-white rounded-lg shadow-md">
+                    <span class="text-5xl mb-4 block">📦</span>
+                    <h3 class="text-xl font-bold mb-2">Built-in Logistics</h3>
+                    <p class="text-gray-600">We handle the payments and delivery, so you can focus on creating.</p>
+                </div>
+                <div class="p-6 bg-white rounded-lg shadow-md">
+                    <span class="text-5xl mb-4 block">📈</span>
+                    <h3 class="text-xl font-bold mb-2">Scale Affordably</h3>
+                    <p class="text-gray-600">No monthly fees. We only make money when you make a sale.</p>
+                </div>
+                <div class="p-6 bg-white rounded-lg shadow-md">
+                    <span class="text-5xl mb-4 block">🤝</span>
+                    <h3 class="text-xl font-bold mb-2">Find Your Audience</h3>
+                    <p class="text-gray-600">Reach new customers actively looking for local, unique streetwear.</p>
+                </div>
+            </section>
+
+            <section class="bg-white p-8 md:p-12 rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-4">Join Our Brand Waitlist</h2>
+                <p class="text-gray-600 text-center mb-8">Be one of the first brands to get a featured spot on Charites Threads.</p>
+                <form id="waitlistForm" class="space-y-6 max-w-lg mx-auto">
+                    <div>
+                        <label for="brandName" class="block text-sm font-semibold mb-2">Brand Name</label>
+                        <input type="text" id="brandName" name="brandName" placeholder="Your Brand Name" required class="w-full p-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-[#E07A5F]">
+                    </div>
+                    <div>
+                        <label for="ownerName" class="block text-sm font-semibold mb-2">Owner's Name</label>
+                        <input type="text" id="ownerName" name="ownerName" placeholder="Your Name" required class="w-full p-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-[#E07A5F]">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-semibold mb-2">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" required class="w-full p-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-[#E07A5F]">
+                    </div>
+                    <div>
+                        <label for="contactNumber" class="block text-sm font-semibold mb-2">Contact Number</label>
+                        <input type="tel" id="contactNumber" name="contactNumber" placeholder="e.g., 081 234 5678" required class="w-full p-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-[#E07A5F]">
+                    </div>
+                    <div>
+                        <label for="instagramHandle" class="block text-sm font-semibold mb-2">Instagram Handle</label>
+                        <input type="text" id="instagramHandle" name="instagramHandle" placeholder="@yourbrand" class="w-full p-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-[#E07A5F]">
+                    </div>
+                    <button type="submit" class="w-full py-4 rounded-lg font-bold btn-primary">Join the Waitlist</button>
+                    <p id="submissionMessage" class="text-center text-sm mt-4 text-[#81B29A] hidden">Thank you! We've received your information and will be in touch soon.</p>
+                    <p id="error-message" class="text-center text-sm mt-4 text-[#E07A5F] hidden"></p>
+                </form>
+            </section>
+        </main>
+
+        <footer class="text-center mt-16 md:mt-24 py-8 border-t border-gray-300">
+            <p class="text-sm text-gray-500">&copy; 2025 Charites Threads. All Rights Reserved.</p>
+        </footer>
+
+    </div>
+</body>
+</html>
