@@ -13,7 +13,15 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfig = {
+  apiKey: "AIzaSyA-j78LaGb20QfukIy9MZVL9q2m5cWq5fM",
+  authDomain: "charites-threads.firebaseapp.com",
+  projectId: "charites-threads",
+  storageBucket: "charites-threads.firebasestorage.app",
+  messagingSenderId: "761764540698",
+  appId: "1:761764540698:web:4bfd0d6df89fa6b94b3ca3",
+  measurementId: "G-BG7W4WNXXB"
+};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         let db, auth;
