@@ -87,20 +87,6 @@
                 console.error("Google Sheets Error:", gsError);
             }
 
-            // --- STEP 2: Send to Firebase (This is where your error is happening) ---
-            try {
-                if (db) {
-                    const collectionPath = `artifacts/${appId}/public/data/waitlist_signups`;
-                    await addDoc(collection(db, collectionPath), {
-                        ...formData,
-                        timestamp: new Date()
-                    });
-                    console.log("Data sent to Firebase!");
-                }
-            } catch (fbError) {
-                // We log the error but don't stop the UI success message
-                console.error("Firebase failed, but we continue:", fbError);
-            }
 
             // --- STEP 3: Success UI (Show this anyway so the user is happy) ---
             waitlistForm.reset();
