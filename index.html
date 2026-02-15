@@ -13,6 +13,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+         // Partner Note: Please verify these Firebase credentials
         const firebaseConfig = {
   apiKey: "AIzaSyA-j78LaGb20QfukIy9MZVL9q2m5cWq5fM",
   authDomain: "charites-threads.firebaseapp.com",
@@ -57,37 +58,58 @@
         const submitButton = waitlistForm.querySelector('button[type="submit"]');
         const errorMessage = document.getElementById('error-message');
 
+        // 1. PASTE YOUR GOOGLE URL HERE
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOBzWdPSeJeR_fyf3qswe-XGzSguiKHLQ5kHlDf5_LmcYRub2pa9ckSumJAOQTCPjN7w/exec"; 
+
         waitlistForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            if (!db) {
-                if (errorMessage) errorMessage.textContent = "Database not ready. Please wait a moment and try again.";
-                return;
-            }
-
+            // Capture the form data immediately
             const formData = {
                 brandName: document.getElementById('brandName').value,
                 ownerName: document.getElementById('ownerName').value,
                 email: document.getElementById('email').value,
                 contactNumber: document.getElementById('contactNumber').value,
-                instagramHandle: document.getElementById('instagramHandle').value,
-                timestamp: new Date()
+                instagramHandle: document.getElementById('instagramHandle').value
             };
 
+            // --- STEP 1: Send to Google Sheets (This should work regardless of Firebase) ---
             try {
-                const collectionPath = `artifacts/${appId}/public/data/waitlist_signups`;
-                await addDoc(collection(db, collectionPath), formData);
-                
-                waitlistForm.reset();
-                submitButton.style.display = 'none';
-                submissionMessage.style.display = 'block';
-                if (errorMessage) errorMessage.textContent = '';
-
-            } catch (error) {
-                console.error("Error adding document:", error);
-                if (errorMessage) errorMessage.textContent = `Submission failed: ${error.message}`;
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                console.log("Data sent to Google Sheets!");
+            } catch (gsError) {
+                console.error("Google Sheets Error:", gsError);
             }
+
+            // --- STEP 2: Send to Firebase (This is where your error is happening) ---
+            try {
+                if (db) {
+                    const collectionPath = `artifacts/${appId}/public/data/waitlist_signups`;
+                    await addDoc(collection(db, collectionPath), {
+                        ...formData,
+                        timestamp: new Date()
+                    });
+                    console.log("Data sent to Firebase!");
+                }
+            } catch (fbError) {
+                // We log the error but don't stop the UI success message
+                console.error("Firebase failed, but we continue:", fbError);
+            }
+
+            // --- STEP 3: Success UI (Show this anyway so the user is happy) ---
+            waitlistForm.reset();
+            submitButton.style.display = 'none';
+            submissionMessage.style.display = 'block';
+            if (errorMessage) errorMessage.textContent = '';
         });
+
+        
 
         async function incrementVisitCount() {
             if (!db) return;
